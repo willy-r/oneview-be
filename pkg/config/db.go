@@ -9,7 +9,7 @@ import (
 )
 
 func InitDatabase() *gorm.DB {
-	db, err := gorm.Open(sqlite.Open("oneview.sqlite3"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(Envs.DBAddr), &gorm.Config{})
 	if err != nil {
 		log.Fatal("failed to connect database")
 	}

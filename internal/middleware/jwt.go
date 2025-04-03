@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"oneview-be/pkg/config"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -17,8 +18,8 @@ func JWTProtected() fiber.Handler {
 
 		tokenString := strings.TrimPrefix(auth, "Bearer ")
 
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			return []byte("secret"), nil
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+			return []byte(config.Envs.JwtSecret), nil
 		})
 
 		if err != nil || !token.Valid {

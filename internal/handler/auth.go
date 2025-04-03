@@ -2,6 +2,7 @@ package handler
 
 import (
 	"oneview-be/internal/model"
+	"oneview-be/pkg/config"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -43,9 +44,9 @@ func Login(db *gorm.DB) fiber.Handler {
 		}
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 			"sub": user.ID,
-			"exp": time.Now().Add(time.Hour * 72).Unix(),
+			"exp": time.Now().Add(time.Second * time.Duration(config.Envs.JwtExpirationSeconds)).Unix(),
 		})
-		signed, _ := token.SignedString([]byte("secret"))
+		signed, _ := token.SignedString([]byte(config.Envs.JwtSecret))
 		return c.JSON(fiber.Map{"token": signed})
 	}
 }

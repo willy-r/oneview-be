@@ -28,5 +28,5 @@ func main() {
 	api.Post("/", handler.SendMessage(db))
 	api.Get("/:id", handler.ReadMessage(db))
 
-	r.Listen(":3000")
+	r.Listen(config.Envs.Address)
 }

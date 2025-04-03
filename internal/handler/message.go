@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"oneview-be/internal/model"
+	"oneview-be/pkg/config"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
@@ -19,7 +20,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var secretKey = []byte("verysecretkey123") // 16 bytes para AES-128
+var secretKey = []byte(config.Envs.AESKey)
 
 type MessageRequest struct {
 	ReceiverID uint   `json:"receiver_id"`
