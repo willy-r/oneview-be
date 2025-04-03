@@ -24,9 +24,13 @@ func main() {
 	})
 	r.Get("/ws/:userID", websocket.New(handler.WebSocketHandler))
 
-	api := r.Group("/messages", middleware.JWTProtected())
-	api.Post("/", handler.SendMessage(db))
-	api.Get("/:id", handler.ReadMessage(db))
+	messagesRoutes := r.Group("/messages", middleware.JWTProtected())
+	messagesRoutes.Post("/", handler.SendMessage(db))
+	messagesRoutes.Get("/:id", handler.ReadMessage(db))
+
+	codeRoutes := r.Group("/code", middleware.JWTProtected())
+	codeRoutes.Put("/rotate", handler.RotatePublicCode(db))
+	codeRoutes.Get("/my", handler.GetMyPublicCode(db))
 
 	r.Listen(config.Envs.Address)
 }

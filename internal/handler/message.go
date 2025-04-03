@@ -23,8 +23,8 @@ import (
 var secretKey = []byte(config.Envs.AESKey)
 
 type MessageRequest struct {
-	ReceiverID uint   `json:"receiver_id"`
-	Content    string `json:"content"`
+	ToCode  string `json:"to_code"`
+	Content string `json:"content"`
 }
 
 func encrypt(text string) (string, error) {
@@ -67,21 +67,25 @@ func SendMessage(db *gorm.DB) fiber.Handler {
 			return c.Status(400).SendString("Invalid body")
 		}
 
+		var receiver model.User
+		if err := db.First(&receiver, "public_code = ?", req.ToCode).Error; err != nil {
+			return c.Status(404).SendString("Receiver not found")
+		}
+
 		encrypted, err := encrypt(req.Content)
 		if err != nil {
-			log.Println("Encryption error:", err)
 			return c.Status(500).SendString("Encryption failed")
 		}
 
 		msg := model.Message{
 			SenderID:   senderID,
-			ReceiverID: req.ReceiverID,
+			ReceiverID: receiver.ID,
 			Content:    encrypted,
 			CreatedAt:  time.Now(),
 		}
 		db.Create(&msg)
 
-		notifyUser(req.ReceiverID, "new_message")
+		notifyUser(receiver.ID, "new_message")
 
 		return c.Status(201).JSON(msg.ID)
 	}
