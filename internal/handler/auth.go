@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"oneview-be/internal/model"
 	"oneview-be/pkg/config"
+	"regexp"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -24,17 +25,32 @@ func generatePublicCode() string {
 	return hex.EncodeToString(b) // Ex: "a1f2c3d4"
 }
 
+func isStrongPassword(password string) bool {
+	if len(password) < 8 {
+		return false
+	}
+	hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
+	hasLower := regexp.MustCompile(`[a-z]`).MatchString(password)
+	hasNumber := regexp.MustCompile(`[0-9]`).MatchString(password)
+	hasSpecial := regexp.MustCompile(`[!@#~$%^&*()+|_]{1}`).MatchString(password)
+
+	return hasUpper && hasLower && hasNumber && hasSpecial
+}
+
 func Register(db *gorm.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var req AuthRequest
 		if err := c.BodyParser(&req); err != nil {
 			return c.Status(400).SendString("Invalid request")
 		}
+		if !isStrongPassword(req.Password) {
+			return c.Status(400).SendString("Password too weak: use at least 8 characters, with upper/lowercase, a number, and special")
+		}
 		hash, _ := bcrypt.GenerateFromPassword([]byte(req.Password), 14)
 		code := generatePublicCode()
 		user := model.User{Email: req.Email, Password: string(hash), PublicCode: code}
 		if err := db.Create(&user).Error; err != nil {
-			return c.Status(400).SendString("User already exists")
+			return c.Status(409).SendString("User already exists")
 		}
 		return c.Status(201).JSON(fiber.Map{"public_code": code})
 	}

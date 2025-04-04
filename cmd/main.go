@@ -26,6 +26,7 @@ func main() {
 
 	messagesRoutes := r.Group("/messages", middleware.JWTProtected())
 	messagesRoutes.Post("/", handler.SendMessage(db))
+	messagesRoutes.Get("/my", handler.ListMessages(db))
 	messagesRoutes.Get("/:id", handler.ReadMessage(db))
 
 	codeRoutes := r.Group("/code", middleware.JWTProtected())

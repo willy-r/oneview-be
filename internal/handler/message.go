@@ -116,6 +116,28 @@ func ReadMessage(db *gorm.DB) fiber.Handler {
 	}
 }
 
+func ListMessages(db *gorm.DB) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		token := c.Locals("user").(*jwt.Token)
+		claims := token.Claims.(jwt.MapClaims)
+		userID := uint(claims["sub"].(float64))
+
+		var messages []model.Message
+		db.Where("receiver_id = ? AND read_at IS NULL", userID).Order("created_at desc").Find(&messages)
+
+		var result []fiber.Map = make([]fiber.Map, 0, len(messages))
+		for _, m := range messages {
+			result = append(result, fiber.Map{
+				"id":         m.ID,
+				"sender_id":  m.SenderID,
+				"created_at": m.CreatedAt,
+			})
+		}
+
+		return c.JSON(result)
+	}
+}
+
 var clients = make(map[uint]*websocket.Conn)
 var mu sync.Mutex
 
