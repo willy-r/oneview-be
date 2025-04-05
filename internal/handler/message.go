@@ -72,16 +72,24 @@ func SendMessage(db *gorm.DB) fiber.Handler {
 			return c.Status(404).SendString("Receiver not found")
 		}
 
+		var sender model.User
+		if err := db.First(&sender, senderID).Error; err != nil {
+			return c.Status(404).SendString("Sender not found")
+		}
+
 		encrypted, err := encrypt(req.Content)
 		if err != nil {
 			return c.Status(500).SendString("Encryption failed")
 		}
 
 		msg := model.Message{
-			SenderID:   senderID,
-			ReceiverID: receiver.ID,
-			Content:    encrypted,
-			CreatedAt:  time.Now(),
+			SenderID:       senderID,
+			ReceiverID:     receiver.ID,
+			SenderCode:     sender.PublicCode,
+			ReceiverCode:   receiver.PublicCode,
+			Content:        encrypted,
+			CreatedAt:      time.Now(),
+			ExpirationTime: time.Now().Add(time.Second * time.Duration(config.Envs.MessagesExpirationSeconds)),
 		}
 		db.Create(&msg)
 
@@ -102,6 +110,10 @@ func ReadMessage(db *gorm.DB) fiber.Handler {
 			return c.Status(410).SendString("Message already read")
 		}
 		now := time.Now()
+		if msg.ExpirationTime.Before(now) {
+			db.Delete(&msg)
+			return c.Status(410).SendString("Message expired")
+		}
 		db.Model(&msg).Update("read_at", &now)
 		db.Delete(&msg)
 
@@ -112,7 +124,7 @@ func ReadMessage(db *gorm.DB) fiber.Handler {
 
 		notifyUser(msg.SenderID, "message_read")
 
-		return c.JSON(fiber.Map{"message": decrypted})
+		return c.JSON(fiber.Map{"message": decrypted, "sender_code": msg.SenderCode})
 	}
 }
 
@@ -122,6 +134,12 @@ func ListMessages(db *gorm.DB) fiber.Handler {
 		claims := token.Claims.(jwt.MapClaims)
 		userID := uint(claims["sub"].(float64))
 
+		var messagesToDelete []model.Message
+		db.Where("receiver_id = ? AND read_at IS NULL", userID).Where("expiration_time < ?", time.Now()).Find(&messagesToDelete)
+		for _, m := range messagesToDelete {
+			db.Delete(&m)
+		}
+
 		var messages []model.Message
 		db.Where("receiver_id = ? AND read_at IS NULL", userID).Order("created_at desc").Find(&messages)
 
@@ -129,8 +147,8 @@ func ListMessages(db *gorm.DB) fiber.Handler {
 		for _, m := range messages {
 			result = append(result, fiber.Map{
 				"id":         m.ID,
-				"sender_id":  m.SenderID,
 				"created_at": m.CreatedAt,
+				"read_at":    m.ReadAt,
 			})
 		}
 

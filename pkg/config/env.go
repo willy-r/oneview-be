@@ -8,11 +8,12 @@ import (
 )
 
 type Config struct {
-	Address              string
-	DBAddr               string
-	JwtExpirationSeconds int64
-	JwtSecret            string
-	AESKey               string
+	Address                   string
+	DBAddr                    string
+	JwtExpirationSeconds      int64
+	JwtSecret                 string
+	AESKey                    string
+	MessagesExpirationSeconds int64
 }
 
 var Envs = initConfig()
@@ -21,11 +22,12 @@ func initConfig() Config {
 	godotenv.Load()
 
 	return Config{
-		Address:              getEnv("ADDRESS", "localhost:8080"),
-		DBAddr:               getEnv("DB_ADDR", "oneview.sqlite3"),
-		JwtExpirationSeconds: getEnvAsInt("JWT_EXPIRATION_SECONDS", 3600*24*7), // 7 days
-		JwtSecret:            getEnv("JWT_SECRET", "secret"),
-		AESKey:               getEnv("AES_KEY", "verysecretkey123"),
+		Address:                   getEnv("ADDRESS", "localhost:8080"),
+		DBAddr:                    getEnv("DB_ADDR", "oneview.sqlite3"),
+		JwtExpirationSeconds:      getEnvAsInt("JWT_EXPIRATION_SECONDS", 3600), // 1 hour
+		JwtSecret:                 getEnv("JWT_SECRET", "secret"),
+		AESKey:                    getEnv("AES_KEY", "verysecretkey123"),
+		MessagesExpirationSeconds: getEnvAsInt("MESSAGES_EXPIRATION_SECONDS", 3600), // 1 hour
 	}
 }
 
