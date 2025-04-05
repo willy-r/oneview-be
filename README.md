@@ -40,5 +40,10 @@ go mod tidy
 go run ./cmd/main.go
 ```
 
+## 🧪 Testes
+```bash
+go test ./internal/handler
+```
+
 ## 📄 Licença
-Este projeto está sob a licença MIT. Veja o conteúdo em `LICENSE`.
+Este projeto está sob a licença MIT. Veja o conteúdo em [`LICENSE`](LICENSE).
