@@ -147,6 +147,7 @@ func ListMessages(db *gorm.DB) fiber.Handler {
 		for _, m := range messages {
 			result = append(result, fiber.Map{
 				"id":         m.ID,
+				"sender_id":  m.SenderID,
 				"created_at": m.CreatedAt,
 				"read_at":    m.ReadAt,
 			})
